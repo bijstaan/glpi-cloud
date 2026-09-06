@@ -1,0 +1,79 @@
+{
+  "scopes": [
+    { "key": "sub-a", "name": "Production", "is_active": true },
+    { "key": "sub-b", "name": "Lapsed subscription", "is_active": false }
+  ],
+  "resources": {
+    "compute": {
+      "sub-a": [
+        {
+          "native_id": "/subs/sub-a/vm/web-01",
+          "name": "web-01",
+          "type": "virtualmachine",
+          "state": "running",
+          "tags": { "client": "acme", "env": "prod" },
+          "attributes": { "size": "Standard_D2s_v5", "location": "uksouth" }
+        },
+        {
+          "native_id": "/subs/sub-a/vm/web-02",
+          "name": "web-02",
+          "type": "virtualmachine",
+          "state": "stopped",
+          "tags": { "client": "acme", "env": "prod" },
+          "attributes": { "size": "Standard_D2s_v5", "location": "uksouth" }
+        },
+        {
+          "native_id": "/subs/sub-a/disk/web-01-os",
+          "name": "web-01-os",
+          "type": "disk",
+          "state": "attached",
+          "tags": { "client": "acme" },
+          "attributes": { "size_gb": 128 }
+        }
+      ]
+    },
+    "storage": {
+      "sub-a": [
+        {
+          "native_id": "/subs/sub-a/sa/acmebackups",
+          "name": "acmebackups",
+          "type": "storageaccount",
+          "state": "available",
+          "tags": { "client": "acme" },
+          "attributes": { "public_access": false, "tier": "Hot" }
+        }
+      ]
+    }
+  },
+  "costs": [
+    {
+      "native_id": "/subs/sub-a/vm/web-01",
+      "period": "2026-07",
+      "currency": "GBP",
+      "amount": 41.5,
+      "source": "fixture"
+    },
+    {
+      "native_id": "/subs/sub-a/vm/web-02",
+      "period": "2026-07",
+      "currency": "GBP",
+      "amount": 12.25,
+      "source": "fixture"
+    },
+    {
+      "native_id": "",
+      "period": "2026-07",
+      "currency": "GBP",
+      "amount": 9.99,
+      "source": "marketplace"
+    },
+    {
+      "native_id": "/subs/sub-a/vm/web-01",
+      "period": "2026-08",
+      "currency": "GBP",
+      "amount": 20.0,
+      "source": "fixture",
+      "is_provisional": true
+    }
+  ]
+}

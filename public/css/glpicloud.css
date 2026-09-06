@@ -1,0 +1,74 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright (C) 2026 Bijstaan */
+/*
+ * GLPI Cloud.
+ *
+ * Small on purpose: everything on these pages is a Tabler component GLPI
+ * already ships. The only rules here are the two the suite has already measured
+ * core as getting wrong on its own dark palettes.
+ */
+
+.glpicloud-page,
+.glpicloud-config {
+    padding-top: 0.5rem;
+}
+
+/*
+ * Muted text on a dark palette. The numbers, and the `!important`, are the
+ * house formula established in glpi-vuln's stylesheet against all three of
+ * GLPI's dark=1 palettes: core ships `.text-muted` as `color: var(--tblr-muted)
+ * !important`, so a plain override is a silent no-op, and `transparent 12%`
+ * is what clears 4.5:1 on `auror_dark` (a mid-tone navy body, not the pure
+ * black the more common 28% was tuned against).
+ *
+ * It matters here because these pages carry their caveats in exactly these
+ * classes — "this resource is gone", "provisional period", "read only" — and
+ * an unreadable caveat is a caveat that was not made.
+ */
+:root[data-glpi-theme-dark="1"] .glpicloud-page .form-text,
+:root[data-glpi-theme-dark="1"] .glpicloud-page .text-muted,
+:root[data-glpi-theme-dark="1"] .glpicloud-config .form-text,
+:root[data-glpi-theme-dark="1"] .glpicloud-config .text-muted,
+:root[data-glpi-theme-dark="1"] .glpicloud-surface .form-text,
+:root[data-glpi-theme-dark="1"] .glpicloud-surface .text-muted {
+    color: color-mix(in srgb, var(--tblr-body-color), transparent 12%) !important;
+}
+
+/*
+ * Provider badges on the settings page.
+ *
+ * The house finding, re-measured here rather than assumed: Tabler's `-lt`
+ * badges (tinted background, solid-colour text) assume a near-black card
+ * surface, and `auror_dark`'s is far lighter (#232e3c). Measured on this page
+ * before the fix: `bg-blue-lt` at **2.53:1**, well under the 4.5:1 floor, on
+ * the badge that names which cloud provider is installed.
+ *
+ * The fix is the one glpi-vuln arrived at for four other `-lt` badges:
+ * lighten the *text* toward white rather than repaint the background, which
+ * keeps the badge's hue — blue means provider — and can only improve the
+ * already-comfortable margin on the near-black palettes.
+ *
+ * `!important` is required, not polish: Tabler ships these utilities with
+ * `!important`, so a plain override is a silent no-op. `bg-secondary-lt`, used
+ * for resource tags, was measured fine and is deliberately left alone.
+ */
+:root[data-glpi-theme-dark="1"] .glpicloud-config .badge.bg-blue-lt {
+    color: color-mix(in srgb, var(--tblr-blue), white 35%) !important;
+}
+
+/* The provider payload, straight from the API: meaningful line breaks. */
+.glpicloud-surface details pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 24rem;
+    overflow-y: auto;
+    /*
+     * NOT --tblr-bg-surface-secondary: core declares it as var(--tblr-light)
+     * and its dark palettes redefine --tblr-light to #e6e6e6 without
+     * redefining the surface token, painting a near-white panel on a black
+     * page. The tertiary surface follows the theme.
+     */
+    background: var(--tblr-bg-surface-tertiary);
+    padding: 0.75rem;
+    border-radius: var(--tblr-border-radius);
+}
