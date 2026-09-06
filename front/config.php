@@ -22,8 +22,11 @@ require_once(__DIR__ . '/../../../front/_check_webserver_config.php');
 
 use GlpiPlugin\Glpicloud\Account;
 use GlpiPlugin\Glpicloud\Registry;
+use GlpiPlugin\Glpicloud\Projection;
 use GlpiPlugin\Glpicloud\Provider;
 use GlpiPlugin\Glpicloud\Settings;
+use GlpiPlugin\Glpicloud\SignalEvents;
+use GlpiPlugin\Glpisignal\Source as SignalSource;
 
 Session::checkRight('plugin_glpicloud_config', READ);
 
@@ -48,6 +51,16 @@ if (!empty($_POST['update'])) {
             $input[$number] = (int) $_POST[$number];
         }
     }
+
+    if (isset($_POST['signal_sources_id'])) {
+        $input['signal_sources_id'] = (int) $_POST['signal_sources_id'];
+    }
+
+    // Same trap as the flags, one level down: a checkbox group with nothing
+    // ticked posts no key at all. Written unconditionally so that clearing the
+    // narrowing is a thing the form can express — and an empty list means every
+    // mapped type, which is why clearing it is safe rather than a silent off.
+    $input['projection_types'] = implode(',', array_map('strval', (array) ($_POST['projection_types'] ?? [])));
 
     Settings::save($input);
     Session::addMessageAfterRedirect(__s('Saved.', 'glpicloud'), true, INFO);
@@ -200,13 +213,84 @@ $number(
 echo '</div></div>';
 
 echo "<div class='card mb-3'><div class='card-body'>";
+echo "<h3 class='card-title'>" . __s('Alerting', 'glpicloud') . '</h3>';
+
+// The same shape glpi-signal's own settings page uses to pick a source for
+// netscan's traps — the identical problem, so the identical control. Guarded on
+// the class rather than only on the plugin flag: a plugin removed from disk
+// without being uninstalled is still "active" as far as the flag is concerned.
+if (SignalEvents::available() && class_exists(SignalSource::class)) {
+    echo "<div class='mb-3'><label class='form-label'>"
+       . __s('Record cloud sync failures against', 'glpicloud') . '</label>';
+    SignalSource::dropdown([
+        'name'                => 'signal_sources_id',
+        'value'               => (int) Settings::get('signal_sources_id'),
+        'display_emptychoice' => true,
+        'emptylabel'          => __('None — no events will be raised', 'glpicloud'),
+        'condition'           => ['is_active' => 1, 'is_deleted' => 0],
+    ]);
+    echo "<div class='form-text'>"
+       . __s('An expired credential breaks nothing visibly: the pages still render and the figures '
+           . "are simply frozen. This is the only place that failure shows. That source's entity, "
+           . 'rules and thresholds apply to the events, exactly as they would to a webhook — and a '
+           . 'partial sweep never raises one, because a checkpointed sweep is normal operation.', 'glpicloud')
+       . '</div></div>';
+} else {
+    echo "<div class='text-muted'>"
+       . __s('GLPI Signal is not active on this instance, so there is nowhere to raise cloud sync '
+           . 'failures.', 'glpicloud')
+       . '</div>';
+}
+
+echo '</div></div>';
+
+echo "<div class='card mb-3'><div class='card-body'>";
 echo "<h3 class='card-title'>" . __s('Native assets', 'glpicloud') . '</h3>';
 $checkbox(
     'projection_enabled',
     __('Maintain native GLPI assets for selected resource types', 'glpicloud'),
     __('Off, and per type when on. Projecting a dev subscription of four thousand resources into Computers rewrites the asset list the service desk depends on.', 'glpicloud')
 );
-echo "<div class='text-muted'>" . __s('Per-type mapping arrives with the projection milestone; this switch does nothing on its own yet.', 'glpicloud') . '</div>';
+
+// The per-type narrowing. Grouped by what each type becomes, because that is
+// the question an administrator is actually answering — "do I want cloud
+// databases showing up in my DatabaseInstance list" — rather than a flat list
+// of eleven provider words.
+$grouped = [];
+foreach (Projection::MAP as $type => $itemtype) {
+    $grouped[$itemtype][] = $type;
+}
+
+$selected = array_filter(array_map('trim', explode(',', (string) Settings::get('projection_types'))));
+
+echo "<div class='mt-3'>";
+echo "<label class='form-label'>" . __s('Limit to these types', 'glpicloud') . '</label>';
+echo "<div class='form-text mb-2'>"
+   . __s('Nothing ticked means every type below — which is what switching projection on asks for. '
+       . 'Tick a subset to project only those.', 'glpicloud')
+   . '</div>';
+
+foreach ($grouped as $itemtype => $types) {
+    echo "<div class='mb-2'>";
+    echo "<div class='fw-bold'>" . htmlspecialchars($itemtype::getTypeName(1), ENT_QUOTES, 'UTF-8') . '</div>';
+
+    foreach ($types as $type) {
+        $id = 'projtype_' . $type;
+        echo "<div class='form-check form-check-inline'>";
+        echo "<input class='form-check-input' type='checkbox' name='projection_types[]' "
+           . "id='" . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . "' "
+           . "value='" . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . "'"
+           . (in_array($type, $selected, true) ? " checked='checked'" : '')
+           . ($can_edit ? '' : ' disabled') . '>';
+        echo "<label class='form-check-label' for='" . htmlspecialchars($id, ENT_QUOTES, 'UTF-8') . "'>"
+           . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . '</label>';
+        echo '</div>';
+    }
+
+    echo '</div>';
+}
+
+echo '</div>';
 echo '</div></div>';
 
 if ($can_edit) {

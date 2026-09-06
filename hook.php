@@ -8,6 +8,7 @@ use GlpiPlugin\Glpicloud\Account;
 use GlpiPlugin\Glpicloud\Resource;
 use GlpiPlugin\Glpicloud\Run;
 use GlpiPlugin\Glpicloud\Settings;
+use GlpiPlugin\Glpicloud\Statement;
 use GlpiPlugin\Glpicloud\Sync;
 
 /**
@@ -85,6 +86,12 @@ function plugin_glpicloud_install()
                 `is_recursive` TINYINT NOT NULL DEFAULT 0,
                 `projected_itemtype` VARCHAR(100) NOT NULL DEFAULT '',
                 `projected_items_id` INT UNSIGNED NOT NULL DEFAULT 0,
+                -- How the asset was found (created | osquery | uuid | name),
+                -- and whether this plugin created it. `projected_owned` is what
+                -- makes retraction safe: an asset we created is ours to trash,
+                -- an adopted one is only ever unlinked. See Projection.
+                `projected_how` VARCHAR(16) NOT NULL DEFAULT '',
+                `projected_owned` TINYINT NOT NULL DEFAULT 0,
                 `checksum` CHAR(64) NOT NULL DEFAULT '',
                 `first_seen` TIMESTAMP NULL DEFAULT NULL,
                 `last_seen` TIMESTAMP NULL DEFAULT NULL,
@@ -230,7 +237,57 @@ function plugin_glpicloud_install()
         ]
     );
 
+    plugin_glpicloud_install_columns();
+
+    // The cost statement's notification template. Idempotent: it is seeded only
+    // when no template for Account exists, so an administrator's edits survive
+    // every upgrade.
+    Statement::install();
+
     return true;
+}
+
+/**
+ * Columns added after the first release.
+ *
+ * Install runs on upgrade too, and the table guards above are `tableExists`, so
+ * a column added to a CREATE TABLE never reaches an instance that already has
+ * the table. Each one is added here as well, guarded on its own absence.
+ */
+function plugin_glpicloud_install_columns()
+{
+    /** @var DBmysql $DB */
+    global $DB;
+
+    $table = Resource::getTable();
+
+    $added = [
+        'projected_how'   => "VARCHAR(16) NOT NULL DEFAULT '' AFTER `projected_items_id`",
+        'projected_owned' => "TINYINT NOT NULL DEFAULT 0 AFTER `projected_how`",
+    ];
+
+    $altered = false;
+
+    foreach ($added as $column => $definition) {
+        // `$usecache = false`, and it is load-bearing. DBmysql::fieldExists()
+        // serves a per-request field cache, and by the time an install hook
+        // runs, something earlier in the request has usually already read this
+        // table and warmed it. A cache that predates a previous upgrade says a
+        // column is absent when it is not, and the ALTER then fails with a
+        // duplicate-column error that aborts the whole upgrade — the same trap
+        // the rights block below documents for ProfileRight.
+        if (!$DB->fieldExists($table, $column, false)) {
+            $DB->doQuery("ALTER TABLE `$table` ADD COLUMN `$column` $definition");
+            $altered = true;
+        }
+    }
+
+    // And clear it on the way out, so anything later in this same request —
+    // the display preferences below, a first sweep — sees the new columns
+    // rather than the shape the table had when the request started.
+    if ($altered) {
+        $DB->clearSchemaCache();
+    }
 }
 
 /**
@@ -389,6 +446,8 @@ function plugin_glpicloud_uninstall()
             $cron->delete(['id' => $cron->getID()]);
         }
     }
+
+    Statement::uninstall();
 
     foreach (['plugin_glpicloud_resource', 'plugin_glpicloud_account', 'plugin_glpicloud_config'] as $right) {
         ProfileRight::deleteProfileRights([$right]);

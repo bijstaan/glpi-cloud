@@ -32,7 +32,11 @@ function plugin_init_glpicloud()
 
     $PLUGIN_HOOKS['csrf_compliant']['glpicloud'] = true;
 
-    Plugin::registerClass(Account::class);
+    // `notificationtemplates_types` puts Account in the itemtype dropdown on
+    // Setup > Notifications > Templates, which is what makes the cost
+    // statement's wording editable and lets glpi-mail give it the house design.
+    // Deliberately no Notification record uses it — see Statement.
+    Plugin::registerClass(Account::class, ['notificationtemplates_types' => true]);
 
     // A cloud resource joins core's Management model rather than growing a
     // parallel one. `Plugin::registerClass()` splices an itemtype into any
@@ -76,6 +80,19 @@ function plugin_init_glpicloud()
     // Plugin::isPluginActive('glpiai') would run a database lookup on every
     // request to avoid exactly that.
     $PLUGIN_HOOKS['glpiai_tools']['glpicloud'] = [\GlpiPlugin\Glpicloud\AiTools::class, 'all'];
+
+    // The other three suite seams. All three are registered unconditionally and
+    // all three return [] when the receiving plugin is absent: the hook array is
+    // read by anything that walks $PLUGIN_HOOKS, and guarding these on
+    // Plugin::isPluginActive() would put a database lookup on every request to
+    // save three array assignments.
+    //
+    // Arrays and callables in both directions, never inheritance across a plugin
+    // boundary — a class here extending one of theirs is a fatal at autoload the
+    // moment they are deactivated or mid-upgrade.
+    $PLUGIN_HOOKS['glpimail_letters']['glpicloud']   = [\GlpiPlugin\Glpicloud\MailLetters::class, 'offers'];
+    $PLUGIN_HOOKS['glpipdf_documents']['glpicloud']  = [\GlpiPlugin\Glpicloud\PdfDocument::class, 'offers'];
+
 }
 
 function plugin_version_glpicloud()

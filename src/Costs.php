@@ -116,6 +116,87 @@ final class Costs
         return $out;
     }
 
+    /**
+     * What a period cost, broken down by service and by resource.
+     *
+     * The statement's body. Two groupings rather than one because they answer
+     * different questions and a reader needs both: *what kind of thing* is the
+     * money going on (the service split, which is where a decision gets made)
+     * and *which specific thing* is the most expensive (the resource list,
+     * which is where somebody looks when the split surprises them).
+     *
+     * Unattributed spend — marketplace charges, support plans, reservations,
+     * stored with `plugin_glpicloud_resources_id = 0` — is its own row in both,
+     * never folded in and never dropped. An account total that does not
+     * reconcile with the provider's invoice will not be trusted twice, and the
+     * commonest way to break that reconciliation is to quietly discard the
+     * lines with no resource behind them.
+     *
+     * @return array{
+     *     services:array<int,array{service:string,currency:string,amount:float}>,
+     *     resources:array<int,array{name:string,type:string,service:string,currency:string,amount:float}>
+     * }
+     */
+    public static function breakdown(int $accounts_id, string $period, int $top = 20): array
+    {
+        /** @var DBmysql $DB */
+        global $DB;
+
+        $services  = [];
+        $resources = [];
+
+        $iterator = $DB->request([
+            'SELECT' => [
+                'c.currency AS currency',
+                'c.amount AS amount',
+                'r.service AS service',
+                'r.type AS type',
+                'r.name AS name',
+                'c.plugin_glpicloud_resources_id AS resources_id',
+            ],
+            'FROM'      => self::TABLE . ' AS c',
+            'LEFT JOIN' => [
+                Resource::getTable() . ' AS r' => [
+                    'ON' => ['c' => 'plugin_glpicloud_resources_id', 'r' => 'id'],
+                ],
+            ],
+            'WHERE'     => ['c.plugin_glpicloud_accounts_id' => $accounts_id, 'c.period' => $period],
+        ]);
+
+        $unattributed = __('Unattributed', 'glpicloud');
+
+        foreach ($iterator as $row) {
+            $currency = (string) $row['currency'];
+            $amount   = (float) $row['amount'];
+
+            $service = (int) $row['resources_id'] === 0
+                ? $unattributed
+                : ((string) ($row['service'] ?? '') ?: $unattributed);
+
+            $key = $service . '|' . $currency;
+            $services[$key] ??= ['service' => $service, 'currency' => $currency, 'amount' => 0.0];
+            $services[$key]['amount'] += $amount;
+
+            $resources[] = [
+                'name'     => (int) $row['resources_id'] === 0
+                    ? $unattributed
+                    : ((string) ($row['name'] ?? '') ?: '#' . (int) $row['resources_id']),
+                'type'     => (string) ($row['type'] ?? ''),
+                'service'  => $service,
+                'currency' => $currency,
+                'amount'   => $amount,
+            ];
+        }
+
+        usort($services, static fn(array $a, array $b): int => $b['amount'] <=> $a['amount']);
+        usort($resources, static fn(array $a, array $b): int => $b['amount'] <=> $a['amount']);
+
+        return [
+            'services'  => array_values($services),
+            'resources' => array_slice($resources, 0, max(1, $top)),
+        ];
+    }
+
     /** True while any row of the period is still marked provisional. */
     public static function isProvisional(int $accounts_id, string $period): bool
     {

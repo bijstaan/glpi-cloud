@@ -103,6 +103,14 @@ final class Sync
         }
 
         if ($ids !== []) {
+            // Before the row goes, so the link is still readable. A resource
+            // that is being removed for good takes its projection with it —
+            // an asset this plugin created goes to the trash, an adopted one is
+            // only unlinked. See Projection::retract().
+            foreach ($ids as $id) {
+                Projection::retract($id);
+            }
+
             $DB->delete(History::TABLE, ['plugin_glpicloud_resources_id' => $ids]);
             $DB->delete(Resource::getTable(), ['id' => $ids]);
         }
@@ -192,6 +200,17 @@ final class Sync
 
         if (Settings::get('cost_enabled') && $provider->hasCosts()) {
             $errors = array_merge($errors, self::costs($account, $provider, $now));
+        }
+
+        // Projection last, and outside the request budget: it makes no provider
+        // calls, and it must see the resources this sweep just stored rather
+        // than the ones it started with. A partial sweep still projects what it
+        // did collect — the alternative is an estate that never projects
+        // because one service is always slow.
+        try {
+            Projection::sweep((int) $account->getID());
+        } catch (Throwable $e) {
+            $errors[] = 'Projection failed: ' . $e->getMessage();
         }
 
         $status = match (true) {
@@ -590,10 +609,21 @@ final class Sync
         /** @var DBmysql $DB */
         global $DB;
 
+        $previous = (string) ($account->fields['last_status'] ?? '');
+
         $DB->update(Account::getTable(), [
             'last_sync'   => date('Y-m-d H:i:s', $now),
             'last_status' => $status,
             'last_error'  => mb_substr($error, 0, 255),
         ], ['id' => (int) $account->getID()]);
+
+        // Every stamp, not only transitions: glpi-signal collapses repeats onto
+        // the fingerprint itself, and deciding here would mean this plugin
+        // holding a second, worse copy of that state. The one thing worth
+        // knowing locally is whether anything changed at all — a recovery event
+        // for an account that was already healthy is noise nobody asked for.
+        if ($status !== $previous) {
+            SignalEvents::syncOutcome($account, $status, $error);
+        }
     }
 }
