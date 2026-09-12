@@ -17,8 +17,8 @@ use GlpiPlugin\Glpiai\Tool;
  * half the answer — "no asset matches" is a true statement about GLPI and a
  * false one about their estate.
  *
- * Two tools, and the second one is the one nobody expects to need until they
- * do:
+ * Three tools, and the last two are the ones nobody expects to need until
+ * they do:
  *
  *  - **`cloud_resources`** — what is running in this customer's accounts, what
  *    state it is in, and which GLPI asset it is projected onto. The last part
@@ -28,6 +28,13 @@ use GlpiPlugin\Glpiai\Tool;
  *    figure is still provisional. Support questions turn into commercial ones
  *    faster in the cloud than anywhere else: "can we just spin up another one"
  *    has an answer, and it is a number.
+ *  - **`cloud_changes`** — what moved. A cloud estate changes under you
+ *    without a change request: somebody resizes a VM at four in the afternoon,
+ *    a resource is deleted by a pipeline, a machine quietly stops. Every sync
+ *    records the difference, and this is the only place in the suite that can
+ *    answer "did anything change on their side" for an estate nobody here
+ *    administers. It is the cloud half of `item_history`, and the first thing
+ *    to ask when something worked yesterday.
  *
  * **Nothing here acts on the cloud, and nothing ever should from a tool.**
  * Starting, stopping, resizing or deleting somebody's VM is not a read that
@@ -46,10 +53,139 @@ final class AiTools
     /** Resources returned by one call. */
     private const MAX_RESOURCES = 20;
 
+    /** Change rows returned by one call. */
+    private const MAX_CHANGES = 30;
+
     /** @return Tool[] */
     public static function all(): array
     {
-        return [self::resources(), self::spend()];
+        return [self::resources(), self::spend(), self::changes()];
+    }
+
+    // -------------------------------------------------------------- changes
+
+    private static function changes(): Tool
+    {
+        return new Tool(
+            name: 'cloud_changes',
+            description: 'What has changed in a customer\'s cloud estate recently: resources '
+                . 'resized, stopped, started, renamed, retagged, appearing or disappearing, '
+                . 'with the old and new value and when the sync saw it. Ask this whenever '
+                . 'something worked yesterday and does not today, before blaming an on-premises '
+                . 'change for a fault in a hybrid estate, and when a bill jumps. Nobody raises '
+                . 'a change request for a resize somebody made in a portal — this is the only '
+                . 'record that it happened.',
+            schema: [
+                'type'       => 'object',
+                'properties' => [
+                    'days'        => [
+                        'type'        => 'integer',
+                        'description' => 'How far back to look. Defaults to 7, maximum 90.',
+                    ],
+                    'resource_id' => [
+                        'type'        => 'integer',
+                        'description' => 'One resource\'s history instead of the whole estate.',
+                    ],
+                    'limit'       => [
+                        'type'        => 'integer',
+                        'description' => 'Rows, 1-30. Defaults to 20.',
+                    ],
+                ],
+            ],
+            handler: [self::class, 'runChanges'],
+            right: Resource::$rightname,
+            source: 'glpicloud',
+            pinned: false
+        );
+    }
+
+    /**
+     * @param array<string,mixed> $arguments
+     * @return array<string,mixed>
+     */
+    public static function runChanges(array $arguments = [], mixed $context = null): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $days  = max(1, min(90, (int) ($arguments['days'] ?? 7)));
+        $limit = max(1, min(self::MAX_CHANGES, (int) ($arguments['limit'] ?? 20)));
+        $one   = (int) ($arguments['resource_id'] ?? 0);
+        $since = date('Y-m-d H:i:s', strtotime("-$days days"));
+
+        $entities_id = $context instanceof \GlpiPlugin\Glpiai\ToolContext
+            ? $context->entities_id
+            : 0;
+
+        $where = [
+            History::TABLE . '.date' => ['>=', $since],
+        ];
+
+        if ($one > 0) {
+            $where[History::TABLE . '.plugin_glpicloud_resources_id'] = $one;
+        }
+
+        // Joined to the resource and restricted there, not here: the history
+        // table has no entity of its own, and filtering it alone would hand
+        // one customer's resizes to another's conversation.
+        $where[] = getEntitiesRestrictCriteria(
+            Resource::getTable(),
+            'entities_id',
+            $entities_id,
+            true
+        );
+
+        $rows = [];
+
+        foreach (
+            $DB->request([
+                'SELECT'     => [
+                    History::TABLE . '.date',
+                    History::TABLE . '.field',
+                    History::TABLE . '.old_value',
+                    History::TABLE . '.new_value',
+                    Resource::getTable() . '.id AS resources_id',
+                    Resource::getTable() . '.name AS resource',
+                    Resource::getTable() . '.provider',
+                    Resource::getTable() . '.type',
+                ],
+                'FROM'       => History::TABLE,
+                'INNER JOIN' => [
+                    Resource::getTable() => [
+                        'ON' => [
+                            History::TABLE       => 'plugin_glpicloud_resources_id',
+                            Resource::getTable() => 'id',
+                        ],
+                    ],
+                ],
+                'WHERE'      => $where,
+                'ORDER'      => [History::TABLE . '.date DESC', History::TABLE . '.id DESC'],
+                'LIMIT'      => $limit,
+            ]) as $row
+        ) {
+            $rows[] = array_filter([
+                'when'     => (string) $row['date'],
+                'resource' => (string) $row['resource'],
+                'id'       => (int) $row['resources_id'],
+                'provider' => (string) $row['provider'],
+                'type'     => (string) $row['type'],
+                'changed'  => (string) $row['field'],
+                'from'     => (string) $row['old_value'],
+                'to'       => (string) $row['new_value'],
+            ], static fn($v): bool => $v !== '' && $v !== 0);
+        }
+
+        return [
+            'window'  => sprintf('the last %d days', $days),
+            'changes' => $rows,
+            'note'    => $rows === []
+                ? 'Nothing changed in that window — or nothing has synced. Cloud history is '
+                    . 'written by the sync, so an estate whose last sync failed looks perfectly '
+                    . 'stable. Check cloud_resources for when things were last seen.'
+                : 'Newest first. "attributes" rows name the keys that changed rather than '
+                    . 'quoting the whole payload; the current values are on the resource '
+                    . 'itself.',
+        ];
     }
 
     // ------------------------------------------------------------ resources
