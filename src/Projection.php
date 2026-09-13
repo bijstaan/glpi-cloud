@@ -19,7 +19,7 @@ use Throwable;
  *
  * Milestone 4. Until now every resource lived only in this plugin's own generic
  * table, which is the right *canonical* home and the wrong place to be found
- * from: a customer's file server is an Azure VM, and the technician looking for
+ * from: an entity's file server is an Azure VM, and the technician looking for
  * it opens the Computer list.
  *
  * ## Per-type, because projecting everything would wreck the asset list
@@ -382,10 +382,10 @@ final class Projection
         }
 
         // Name matching is the weakest rule and the one most likely to be
-        // wanted: an MSP that already created "web-prod-01" by hand does not
-        // want a second one. Exact, within the entity, and only when exactly
+        // wanted: an estate that already created "web-prod-01" by hand does
+        // not want a second one. Exact, within the entity, and only when exactly
         // one asset matches — two candidates mean the answer is genuinely
-        // ambiguous and guessing would merge two customers' records.
+        // ambiguous and guessing would merge two entities' records.
         if ($name !== '') {
             $items_id = self::byColumn($itemtype, 'name', $name, $entities_id);
             if ($items_id > 0 && !self::claimed($itemtype, $items_id, (int) $resource['id'])) {

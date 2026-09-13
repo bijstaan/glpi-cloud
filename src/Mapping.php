@@ -7,17 +7,17 @@
 namespace GlpiPlugin\Glpicloud;
 
 /**
- * Which customer a resource belongs to.
+ * Which entity a resource belongs to.
  *
- * For an MSP the answer is rarely "whoever owns the account" — it is "whoever
- * owns the account, except the rows tagged `client=…`". That is a rule set, and
+ * The answer is rarely "whoever owns the account" — it is "whoever owns the
+ * account, except the rows tagged `client=…`". That is a rule set, and
  * a rule set is milestone work: criteria over account,
  * provider, scope, type, name and any tag, actions setting the entity.
  *
  * This is the default those rules will fall through to, and it is deliberately
  * the account's own entity rather than entity 0. A resource that lands at the
  * root because nothing matched is visible to every technician in the instance,
- * which for an MSP is a disclosure, not an inconvenience.
+ * which is a disclosure, not an inconvenience.
  */
 final class Mapping
 {

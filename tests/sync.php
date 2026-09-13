@@ -19,7 +19,7 @@
  *  - a sweep that changed nothing writes nothing;
  *  - a resource that vanished is marked gone — but **only** by a sweep that
  *    completed, because the alternative is that one throttled request deletes a
- *    customer's inventory and the next sweep "rediscovers" it with today's
+ *    entity's inventory and the next sweep "rediscovers" it with today's
  *    first-seen date;
  *  - a truncated sweep keeps its place, and the next one resumes from it;
  *  - re-querying a billing month cannot double-count it;

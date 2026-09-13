@@ -13,15 +13,15 @@ use NotificationTemplate;
  *
  * The artefact this plugin exists to produce for a person rather than for a
  * query. Everything else here answers "what is running"; this answers "what are
- * we paying for it", which is the question that reaches an MSP from the side of
- * the business that signs things.
+ * we paying for it", which is the question that arrives from the side of the
+ * business that signs things.
  *
  * ## One statement, three renderings
  *
  * The figures are assembled once, by {@see data()}, and three surfaces consume
  * them — the notification template seeded here, glpi-mail's branded letter
  * ({@see MailLetters}), and glpi-pdf's document ({@see PdfDocument}). That is
- * deliberate: a PDF and an email that disagree about a customer's cloud bill is
+ * deliberate: a PDF and an email that disagree about an entity's cloud bill is
  * not a formatting bug, it is an invoice dispute.
  *
  * ## Provisional is said, never smoothed

@@ -42,7 +42,7 @@ T::is(
     $itemtypes,
     ['Cluster', 'Computer', 'DatabaseInstance'],
     'three native itemtypes, and only three — anything else means a type was pointed at a class '
-        . 'core does not have, which fails at write time on a customer instance rather than here'
+        . 'core does not have, which fails at write time on an entity instance rather than here'
 );
 
 foreach (array_keys(Projection::MAP) as $type) {

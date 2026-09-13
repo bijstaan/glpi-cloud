@@ -12,8 +12,8 @@ use GlpiPlugin\Glpipdf\Doc;
 /**
  * The cost statement as a document, for glpi-pdf.
  *
- * The one thing this plugin produces that leaves the building. An MSP's
- * customer does not read a GLPI list; they read the thing that arrives as a
+ * The one thing this plugin produces that leaves the building. Whoever asked
+ * does not read a GLPI list; they read the thing that arrives as a
  * file, and until now the answer to "what did our cloud cost last month" was a
  * screenshot of a table.
  *

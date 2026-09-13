@@ -32,7 +32,7 @@ function plugin_glpicloud_install()
     $charset = 'utf8mb4';
     $collate = 'utf8mb4_unicode_ci';
 
-    // One set of credentials, one customer, one schedule. `credentials` is a
+    // One set of credentials, one entity, one schedule. `credentials` is a
     // GLPIKey-encrypted JSON blob rather than columns, because the field list
     // belongs to the provider — see Account.
     if (!$DB->tableExists('glpi_plugin_glpicloud_accounts')) {
@@ -295,7 +295,7 @@ function plugin_glpicloud_install_columns()
  *
  * GLPI opens a plugin list with one column — the item's name — and for a table
  * with no `name` field, with *none at all*. A resource list showing only a name
- * cannot be read: the questions are which customer, what kind of thing, is it
+ * cannot be read: the questions are which entity, what kind of thing, is it
  * running, and when was it last seen. So the defaults are seeded here, as
  * global preferences (`users_id = 0`), which any user is still free to change
  * for themselves.
@@ -359,7 +359,7 @@ function plugin_glpicloud_install_rights()
         // Reading inventory is the ordinary case; creating one by hand is not
         // possible at all (Resource::canCreate()).
         'plugin_glpicloud_resource' => ALLSTANDARDRIGHT,
-        // Holding a customer's cloud credentials is the serious right here,
+        // Holding an entity's cloud credentials is the serious right here,
         // even read-only ones. It is granted with the others by default only to
         // profiles that can already administer configuration.
         'plugin_glpicloud_account'  => ALLSTANDARDRIGHT,
@@ -415,7 +415,7 @@ function plugin_glpicloud_install_rights()
  * The inventory goes with the plugin — it is this plugin's own tables and
  * nothing else can read them. What deliberately does *not* go is anything
  * written into core: `ContractCost` rows stay, because they are money that has
- * been reported on, and quietly reversing a customer's contract history because
+ * been reported on, and quietly reversing an entity's contract history because
  * somebody uninstalled a plugin would be the wrong kind of tidy.
  */
 function plugin_glpicloud_uninstall()

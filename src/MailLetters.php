@@ -14,7 +14,7 @@ use GlpiPlugin\Glpimail\Letter;
  * Registered under `glpimail_letters`. Without it the statement is still a real
  * notification — {@see Statement} seeds a template and GLPI renders it — but
  * the body is the plain `<ul>` a template editor can express, and glpi-mail can
- * only *wrap* that. Describing it here means a customer's cloud bill arrives as
+ * only *wrap* that. Describing it here means an entity's cloud bill arrives as
  * the same card as every other message the estate sends, with the figures as
  * labelled rows rather than as a bulleted list of colons.
  *

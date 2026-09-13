@@ -12,7 +12,7 @@ use GlpiPlugin\Glpiai\Tool;
  * Cloud inventory, offered to glpi-ai's assistant as tools.
  *
  * The estate a model could reach before this stopped at the edge of the
- * building. Every native tool reads the CMDB, and for a customer whose file
+ * building. Every native tool reads the CMDB, and for an entity whose file
  * server is an Azure VM and whose backups are a storage account, the CMDB is
  * half the answer — "no asset matches" is a true statement about GLPI and a
  * false one about their estate.
@@ -20,7 +20,7 @@ use GlpiPlugin\Glpiai\Tool;
  * Three tools, and the last two are the ones nobody expects to need until
  * they do:
  *
- *  - **`cloud_resources`** — what is running in this customer's accounts, what
+ *  - **`cloud_resources`** — what is running in this entity's accounts, what
  *    state it is in, and which GLPI asset it is projected onto. The last part
  *    matters: a resource that projects onto a Computer is reachable by every
  *    other tool here, and one that does not is invisible to all of them.
@@ -44,9 +44,9 @@ use GlpiPlugin\Glpiai\Tool;
  * console with their own name against it.
  *
  * Costs are gated on the *account* right rather than the resource one, which
- * mirrors this plugin's own split: seeing that a VM exists and seeing what the
- * customer pays for it are different permissions, and an MSP's first-line
- * profile usually holds only the first.
+ * mirrors this plugin's own split: seeing that a VM exists and seeing what it
+ * costs are different permissions, and a first-line profile usually holds only
+ * the first.
  */
 final class AiTools
 {
@@ -68,7 +68,7 @@ final class AiTools
     {
         return new Tool(
             name: 'cloud_changes',
-            description: 'What has changed in a customer\'s cloud estate recently: resources '
+            description: 'What has changed in an entity\'s cloud estate recently: resources '
                 . 'resized, stopped, started, renamed, retagged, appearing or disappearing, '
                 . 'with the old and new value and when the sync saw it. Ask this whenever '
                 . 'something worked yesterday and does not today, before blaming an on-premises '
@@ -127,7 +127,7 @@ final class AiTools
 
         // Joined to the resource and restricted there, not here: the history
         // table has no entity of its own, and filtering it alone would hand
-        // one customer's resizes to another's conversation.
+        // one entity's resizes to another's conversation.
         $where[] = getEntitiesRestrictCriteria(
             Resource::getTable(),
             'entities_id',
@@ -195,7 +195,7 @@ final class AiTools
         return new Tool(
             name: 'cloud_resources',
             description: 'What virtual machines, VMs, servers, databases and storage are '
-                . 'running in this customer\'s cloud accounts — Azure, AWS, OVH or whichever '
+                . 'running in this entity\'s cloud accounts — Azure, AWS, OVH or whichever '
                 . 'providers are connected — with each resource\'s state (running, stopped), the '
                 . 'account and region it lives in, when it was last seen, and the GLPI asset it '
                 . 'is projected onto if there is one. Reach for it whenever a fault might be '
@@ -320,7 +320,7 @@ final class AiTools
             'resources' => $out,
             'more'      => $skipped > 0 ? $skipped : null,
             'note'      => $out === []
-                ? 'Nothing matches in this customer\'s connected cloud accounts. That is not the '
+                ? 'Nothing matches in this entity\'s connected cloud accounts. That is not the '
                   . 'same as them having none — a provider may simply not be connected here.'
                 : 'A resource with a glpi_asset is the same machine the other tools can read; '
                   . 'one without exists only in the cloud inventory.',
@@ -383,7 +383,7 @@ final class AiTools
     {
         return new Tool(
             name: 'cloud_spend',
-            description: 'What this customer\'s cloud accounts cost in a given month, per '
+            description: 'What this entity\'s cloud accounts cost in a given month, per '
                 . 'account and currency, and whether the figure is still provisional. Use it '
                 . 'when somebody asks what something is costing, before agreeing to leave a '
                 . 'test environment running, and when a bill is the actual subject of the '
@@ -399,7 +399,7 @@ final class AiTools
             ],
             handler: [self::class, 'runSpend'],
             // The account right, not the resource one: seeing that a VM exists
-            // and seeing what the customer pays for it are different
+            // and seeing what the entity pays for it are different
             // permissions, and this plugin already separates them.
             right: Account::$rightname,
             source: 'glpicloud',
@@ -454,7 +454,7 @@ final class AiTools
                 ),
                 // The distinction the whole answer turns on. A provisional
                 // month is the provider's running estimate and moves; quoting
-                // it as the bill is how a customer is told the wrong number.
+                // it as the bill is how somebody is told the wrong number.
                 'provisional' => Costs::isProvisional($accounts_id, $period),
             ];
         }

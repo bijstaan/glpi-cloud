@@ -120,7 +120,7 @@ final class Run extends CommonDBTM
     /**
      * What one sweep did, and what went wrong.
      *
-     * "Why is this customer's inventory empty" is the question this page
+     * "Why is this entity's inventory empty" is the question this page
      * exists for, so the errors are the body of it rather than a field on it.
      */
     public function showForm($ID, array $options = [])

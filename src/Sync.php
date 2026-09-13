@@ -23,7 +23,7 @@ use Throwable;
  *
  * A resource missing from a *complete and successful* sweep of its unit is
  * marked disappeared. A unit that threw, or that ran out of clock, marks
- * nothing — otherwise one throttled request deletes a customer's inventory, and
+ * nothing — otherwise one throttled request deletes an entity's inventory, and
  * the next sweep "rediscovers" everything with a new first-seen date. This is
  * the single most important rule in the file.
  *

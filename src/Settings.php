@@ -13,9 +13,9 @@ use Config;
  *
  * Two of these are load-bearing rather than routine.
  *
- * **`enabled` is off.** A plugin that started talking to three customers' cloud
- * control planes the moment somebody activated it would be a nasty surprise,
- * and an MSP's contracts do not all permit it. Nothing is contacted, and no
+ * **`enabled` is off.** A plugin that started talking to three cloud control
+ * planes the moment somebody activated it would be a nasty surprise,
+ * and not every organisation permits it. Nothing is contacted, and no
  * cron does any work, until an administrator says so.
  *
  * **`project_*` are off.** Projection creates native GLPI assets (see

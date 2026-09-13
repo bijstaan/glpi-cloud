@@ -16,7 +16,7 @@ use Html;
 use Session;
 
 /**
- * A cloud account: one set of credentials, one customer, one sync schedule.
+ * A cloud account: one set of credentials, one entity, one sync schedule.
  *
  * "Account" is the neutral word for what Azure calls a tenant, AWS an account
  * and GCP an organisation — the thing a credential authenticates against. What
@@ -292,7 +292,7 @@ final class Account extends CommonDBTM
      *
      * Deliberate, and deliberately only on *purge*: a deleted account is in the
      * bin and recoverable, and the resources are still the answer to "what did
-     * this customer have last month". Purge is the button that means it.
+     * this entity have last month". Purge is the button that means it.
      */
     public function cleanDBonPurge()
     {

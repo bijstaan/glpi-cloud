@@ -1,7 +1,7 @@
 # GLPI Cloud
 
 Cloud resources as first-class inventory in GLPI 11, from any provider, without
-a second asset system. Answers, per customer: what is running in their cloud
+a second asset system. Answers, per entity: what is running in their cloud
 accounts, who it belongs to, and what it costs.
 
 GLPI 11 has no cloud model — the only occurrences of the word in its source are
@@ -54,7 +54,7 @@ disk.
 
 A resource missing from a sweep is marked gone only if that sweep **completed**.
 A sweep that threw, or ran out of its wall-clock budget, concludes nothing about
-what is missing. Without this, one throttled request deletes a customer's
+what is missing. Without this, one throttled request deletes an entity's
 inventory and the next sweep rediscovers all of it with today's first-seen date.
 
 ## glpi-ai tools
@@ -63,16 +63,16 @@ Two read-only tools are registered when `glpiai` is present:
 
 | Tool | Answers |
 |---|---|
-| `cloud_resources` | What is running in the customer's accounts: state, region, tags, last seen, and which GLPI asset it projects onto |
+| `cloud_resources` | What is running in the entity's accounts: state, region, tags, last seen, and which GLPI asset it projects onto |
 | `cloud_spend` | What it cost in a month, per account and currency, and whether the figure is still provisional |
 
-Every other tool the assistant has reads the CMDB, so for a customer whose file
+Every other tool the assistant has reads the CMDB, so for an entity whose file
 server is an Azure VM "no asset matches" is true about GLPI and false about
 their estate. Each resource reports its projection, which tells the model
 whether the other tools can reach the thing at all.
 
 Spend is gated on the **account** right rather than the resource right: seeing
-that a VM exists and seeing what the customer pays for it are different
+that a VM exists and seeing what the entity pays for it are different
 permissions. Answers always state whether a month is provisional.
 
 There are no write tools. The credentials are read-only by design, so a write

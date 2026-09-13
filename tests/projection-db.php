@@ -17,14 +17,14 @@
  * are pure. What is here is everything that writes, and the reason it is worth
  * a suite of its own is that **two of these failures are unrecoverable**:
  *
- *  - adopting an asset another resource already owns merges two customers'
+ *  - adopting an asset another resource already owns merges two entities'
  *    records onto one Computer;
  *  - retracting an *adopted* asset as though this plugin had created it puts
  *    somebody's real, hand-maintained inventory in the trash because they
  *    turned a setting off.
  *
  * Neither is visible in a unit test of the map, and neither is something to
- * find out about from a customer.
+ * find out about from an entity.
  *
  * ## Cleaning up
  *
@@ -248,7 +248,7 @@ try {
 
     // =================================================== adoption, by name
     //
-    // The case an MSP actually hits: the asset was created by hand before the
+    // The case anyone actually hits: the asset was created by hand before the
     // cloud account was connected.
 
     $hand = new Computer();

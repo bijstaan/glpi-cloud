@@ -92,7 +92,7 @@ final class SignalEvents
                 ? sprintf('Cloud sync failing for %s (%s)', $name, $provider)
                 : sprintf('Cloud sync recovered for %s (%s)', $name, $provider),
             // High rather than critical: the estate is not down, it is going
-            // stale. Critical is what a customer's production being unreachable
+            // stale. Critical is what an entity's production being unreachable
             // should mean, and spending it here devalues it there.
             'severity' => 'high',
             'status'   => $failing ? 'firing' : 'resolved',

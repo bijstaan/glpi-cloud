@@ -12,7 +12,7 @@
  * the provider says it authenticated as.
  *
  * **Sync now** runs the sweep in this request. It is deliberately gated on
- * UPDATE rather than READ: a sweep costs the customer's API quota.
+ * UPDATE rather than READ: a sweep costs the entity's API quota.
  */
 
 require_once(__DIR__ . '/../../../front/_check_webserver_config.php');
