@@ -32,6 +32,13 @@ function plugin_init_glpicloud()
 
     $PLUGIN_HOOKS['csrf_compliant']['glpicloud'] = true;
 
+    // The plugin's rights, on Administration > Profiles.
+    //
+    // Core stores a plugin's rights and saves them back with its own, but
+    // renders a form for its rights only — so without this tab the ones below
+    // are enforced everywhere and grantable nowhere but SQL.
+    Plugin::registerClass(\GlpiPlugin\Glpicloud\Profile::class, ['addtabon' => ['Profile']]);
+
     // `notificationtemplates_types` puts Account in the itemtype dropdown on
     // Setup > Notifications > Templates, which is what makes the cost
     // statement's wording editable and lets glpi-mail give it the house design.
