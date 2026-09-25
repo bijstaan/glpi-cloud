@@ -27,7 +27,9 @@ echo "<div class='glpicloud-surface'>";
 if ($id > 0) {
     $item->display(['id' => $id]);
 } else {
-    Html::displayErrorAndDie(__('A sync run is recorded by a sync, not created by hand.', 'glpicloud'));
+    $error = new \Glpi\Exception\Http\BadRequestHttpException();
+    $error->setMessageToDisplay(__('A sync run is recorded by a sync, not created by hand.', 'glpicloud'));
+    throw $error;
 }
 
 echo '</div>';

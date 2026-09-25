@@ -40,7 +40,9 @@ echo "<div class='glpicloud-surface'>";
 if ($id > 0) {
     $item->display(['id' => $id]);
 } else {
-    Html::displayErrorAndDie(__('Cloud resources are not created by hand.', 'glpicloud'));
+    $error = new \Glpi\Exception\Http\BadRequestHttpException();
+    $error->setMessageToDisplay(__('Cloud resources are not created by hand.', 'glpicloud'));
+    throw $error;
 }
 
 echo '</div>';

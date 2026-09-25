@@ -39,9 +39,9 @@ use DBmysql;
  */
 final class Resource extends CommonDBTM
 {
-    public static $rightname = 'plugin_glpicloud_resource';
+    public static string $rightname = 'plugin_glpicloud_resource';
 
-    public $dohistory = false;
+    public bool $dohistory = false;
 
     /** Fields whose change is worth a history row, and worth a re-checksum. */
     public const TRACKED = Normalise::TRACKED;

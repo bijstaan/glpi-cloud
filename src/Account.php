@@ -47,9 +47,9 @@ use Session;
  */
 final class Account extends CommonDBTM
 {
-    public static $rightname = 'plugin_glpicloud_account';
+    public static string $rightname = 'plugin_glpicloud_account';
 
-    public $dohistory = true;
+    public bool $dohistory = true;
 
     /** Shown in place of a stored secret, and posted back unchanged to keep it. */
     public const SECRET_PLACEHOLDER = '••••••••';

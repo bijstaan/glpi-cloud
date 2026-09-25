@@ -24,7 +24,7 @@ use DBmysql;
  */
 final class Run extends CommonDBTM
 {
-    public static $rightname = 'plugin_glpicloud_resource';
+    public static string $rightname = 'plugin_glpicloud_resource';
 
     public const RUNNING     = 'running';
     public const OK          = 'ok';

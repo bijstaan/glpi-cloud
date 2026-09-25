@@ -23,7 +23,7 @@ use GlpiPlugin\Glpicloud\Menu;
 use GlpiPlugin\Glpicloud\Resource;
 
 define('PLUGIN_GLPICLOUD_VERSION', '0.1.0');
-define('PLUGIN_GLPICLOUD_MIN_GLPI', '11.0');
+define('PLUGIN_GLPICLOUD_MIN_GLPI', '12.0');
 define('PLUGIN_GLPICLOUD_CONFIG_CONTEXT', 'plugin:glpicloud');
 
 function plugin_init_glpicloud()
